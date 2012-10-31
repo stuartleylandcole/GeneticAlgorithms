@@ -1,0 +1,330 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Collections;
+using System.Linq;
+
+namespace Genetic_Algorithms
+{
+  class Program
+  {
+    public static List<Event> events;
+    public static List<Slot> slots;
+    public static List<string> groups;
+    public static List<Room> rooms;
+    public static List<Event> lunchEvents;
+    public static Room lunchRoom;
+    public static List<Gene> fixedEvents;
+
+    /* get a list of the days used */
+    public static List<int> days()
+    {
+      List<int> days = new List<int>();
+      foreach (Slot s in slots)
+      {
+        if (!days.Contains(s.getDay()))
+          days.Add(s.getDay());
+      }
+      return days;
+    } // days
+
+    static void Main(string[] args)
+    {
+      groups = new List<string>();
+      groups.Add("w");
+      groups.Add("x");
+      groups.Add("y");
+      groups.Add("z");
+      groups.Add("m");
+      groups.Add("a");
+      string[] allGroups = new string[] { groups[0], groups[1], groups[2], groups[3], groups[4] };
+
+      rooms = new List<Room>();
+      rooms.Add(new Room("1.1", "Lecture", "Large"));
+      rooms.Add(new Room("1.3", "Lecture", "Medium"));
+      rooms.Add(new Room("1.4", "Lecture", "Medium"));
+      rooms.Add(new Room("1.5", "Lecture", "Medium"));
+      rooms.Add(new Room("3rd Year Lab", "Lab", "Large"));
+      rooms.Add(new Room("Unix", "Lab", "Large"));
+      rooms.Add(new Room("Eng", "Lab", "Large"));
+      rooms.Add(new Room("Tutorial Room", "Tutorial", "Large"));
+      rooms.Add(new Room("LF15", "Examples Class", "Large"));
+      rooms.Add(new Room("1.5", "Workshop", "Large"));
+
+      lunchRoom = new Room("Lunch Room", "Lunch", "Large");
+
+      // pain value array
+      int[] painValues = {9, 8, 7, 3, 5, 3, 2, 4, // monday
+                          7, 6, 5, 0, 3, 0, 1, 2, // tuesday
+                          7, 5, 0, 0, 3, 0, 0, 3, // thursday
+                          8, 7, 5, 3, 4, 5, 7, 8 // friday
+                         };
+
+      //0900-1700 4x = 8 x 4 = 32 + 4 hours on Wed = 36 hours
+      slots = new List<Slot>();
+      string[] weeks = { "A", "B" };
+      int[] fullDaysID = { 1, 2, 4, 5 };
+
+      foreach (string week in weeks)
+      {
+        int j = 0;
+        foreach (int dayID in fullDaysID)
+        {
+          for (int time = 900; time < 1700; time += 100)
+          {
+            slots.Add(new Slot(dayID, time, week, painValues[j]));
+            j++;
+          }
+        }
+
+        int[] painValuesWed = { 7, 5, 2, 0 };
+        int p = 0;
+        for (int i = 900; i < 1300; i += 100)
+        {
+          slots.Add(new Slot(3, i, week, painValuesWed[p]));
+          p++;
+        }
+      }
+
+
+      slots = (from s in slots
+               orderby s.getDay(), s.getTime()
+               select s).ToList();
+
+      // 22 events
+      events = new List<Event>();
+
+      /* ------------------- Lectures --------------------------- */
+      events.Add(new Event("COMP10412", "Lecture", 1, true, new List<string>(new string[] { groups[0], groups[1], groups[2], groups[3], groups[4]}), "Large"));
+      events.Add(new Event("COMP10092", "Lecture", 1, true, new List<string>(new string[] { groups[0], groups[1], groups[2], groups[3], groups[4], groups[5]}), "Large"));
+      events.Add(new Event("COMP10020", "Lecture", 1, true, new List<string>(new string[] { groups[0], groups[1], groups[2], groups[3], groups[5]}), "Large"));
+      events.Add(new Event("COMP10052", "Lecture", 1, true, new List<string>(new string[] { groups[0], groups[1], groups[2], groups[3], groups[4], groups[5]}), "Large"));
+      events.Add(new Event("COMP10052", "Lecture", 1, true, new List<string>(new string[] { groups[0], groups[1], groups[2], groups[3], groups[4], groups[5]}), "Large"));
+      events.Add(new Event("COMP10092", "Lecture", 1, true, new List<string>(new string[] { groups[0], groups[1], groups[2], groups[3], groups[4], groups[5]}), "Large"));
+      events.Add(new Event("COMP10020", "Lecture", 1, true, new List<string>(new string[] { groups[0], groups[1], groups[2], groups[3], groups[5] }), "Large"));
+      events.Add(new Event("COMP10042", "Lecture", 1, true, new List<string>(new string[] { groups[0], groups[1], groups[2], groups[3], groups[4]}), "Large"));
+      events.Add(new Event("COMP10900", "Lecture", 1, true, new List<string>(new string[] { groups[0], groups[1], groups[2], groups[3], groups[4], groups[5]}), "Large"));
+      events.Add(new Event("COMP10092", "Lecture", 1, true, new List<string>(new string[] { groups[0], groups[1], groups[2], groups[3], groups[4], groups[5]}), "Large"));
+      events.Add(new Event("COMP10042", "Lecture", 1, true, new List<string>(new string[] { groups[0], groups[1], groups[2], groups[3], groups[4] }), "Large"));
+
+      /* ------------------------ Group W events --------------------------- */
+      events.Add(new Event("COMP10052", "Lab", 2, false, new List<string>(new string[] { groups[0], groups[4] }), "Large"));
+      events.Add(new Event("COMP10412", "Lab", 2, false, new List<string>(new string[] { groups[0], groups[4] }), "Large"));
+      events.Add(new Event("COMP10092", "Lab", 2, false, new List<string>(new string[] { groups[0], groups[4] }), "Large"));
+      events.Add(new Event("COMP10900", "Lab", 1, true, new List<string>(new string[] { groups[0], groups[4] }), "Large"));
+      events.Add(new Event("COMP10092", "Lab", 2, true, new List<string>(new string[] { groups[0], groups[4] }), "Large"));
+      events.Add(new Event("COMP10052", "Examples Class", 1, false, new List<string>(new string[] { groups[0], groups[4] }), "Large"));
+      events.Add(new Event("COMP10020", "Examples Class", 1, true, new List<string>(new string[] { groups[0] }), "Large"));
+      events.Add(new Event("COMP10042", "Examples Class", 1, true, new List<string>(new string[] { groups[0], groups[4] }), "Large"));
+      events.Add(new Event("COMP10412", "Examples Class", 1, true, new List<string>(new string[] { groups[0], groups[4] }), "Large"));
+      events.Add(new Event("Tutorial", "Tutorial", 1, true, new List<string>(new string[] { groups[0] }), "Large"));
+      
+      /* ------------------------ Group X events --------------------------- */
+
+      events.Add(new Event("COMP10412", "Lab", 2, false, new List<string>(new string[] { groups[1] }), "Large"));
+      events.Add(new Event("COMP10092", "Lab", 2, false, new List<string>(new string[] { groups[1] }), "Large"));
+      events.Add(new Event("COMP10900", "Lab", 1, true, new List<string>(new string[] { groups[1] }), "Large"));
+      events.Add(new Event("COMP10052", "Lab", 2, false, new List<string>(new string[] { groups[1] }), "Large"));
+      events.Add(new Event("COMP10092", "Lab", 2, true, new List<string>(new string[] { groups[1] }), "Large"));
+      events.Add(new Event("COMP10042", "Examples Class", 1, true, new List<string>(new string[] { groups[1] }), "Large"));
+      events.Add(new Event("COMP10020", "Examples Class", 1, true, new List<string>(new string[] { groups[1] }), "Large"));
+      events.Add(new Event("COMP10412", "Examples Class", 1, true, new List<string>(new string[] { groups[1] }), "Large"));
+      events.Add(new Event("COMP10052", "Examples Class", 1, false, new List<string>(new string[] { groups[1] }), "Large"));
+      events.Add(new Event("Tutorial", "Tutorial", 1, true, new List<string>(new string[] { groups[1] }), "Large"));
+      
+
+      /* ------------------------ Group Y events --------------------------- */
+
+      events.Add(new Event("COMP10092", "Lab", 2, false, new List<string>(new string[] { groups[2] }), "Large"));
+      events.Add(new Event("COMP10412", "Lab", 2, false, new List<string>(new string[] { groups[2] }), "Large"));
+      events.Add(new Event("COMP10052", "Lab", 2, false, new List<string>(new string[] { groups[2] }), "Large"));
+      events.Add(new Event("COMP10092", "Lab", 2, true, new List<string>(new string[] { groups[2] }), "Large"));
+      events.Add(new Event("COMP10900", "Lab", 1, true, new List<string>(new string[] { groups[2] }), "Large"));
+      events.Add(new Event("COMP10020", "Examples Class", 1, true, new List<string>(new string[] { groups[2] }), "Large"));
+      events.Add(new Event("COMP10052", "Examples Class", 1, false, new List<string>(new string[] { groups[2] }), "Large"));
+      events.Add(new Event("COMP10042", "Examples Class", 1, true, new List<string>(new string[] { groups[2] }), "Large"));
+      events.Add(new Event("COMP10412", "Examples Class", 1, true, new List<string>(new string[] { groups[2] }), "Large"));
+      events.Add(new Event("Tutorial", "Tutorial", 1, true, new List<string>(new string[] { groups[2] }), "Large"));
+      
+
+      /* ------------------------ Group Z events --------------------------- */
+      events.Add(new Event("COMP10052", "Lab", 2, false, new List<string>(new string[] { groups[3], groups[5] }), "Large"));
+      events.Add(new Event("COMP10412", "Lab", 2, false, new List<string>(new string[] { groups[3] }), "Large"));
+      events.Add(new Event("COMP10092", "Lab", 2, false, new List<string>(new string[] { groups[3], groups[5] }), "Large"));
+      events.Add(new Event("COMP10900", "Lab", 1, true, new List<string>(new string[] { groups[3], groups[5] }), "Large"));
+      events.Add(new Event("COMP10092", "Lab", 2, true, new List<string>(new string[] { groups[3], groups[5] }), "Large"));
+      events.Add(new Event("COMP10042", "Examples Class", 1, true, new List<string>(new string[] { groups[3] }), "Large"));
+      events.Add(new Event("COMP10052", "Examples Class", 1, false, new List<string>(new string[] { groups[3], groups[5] }), "Large"));
+      events.Add(new Event("COMP10412", "Examples Class", 1, true, new List<string>(new string[] { groups[3] }), "Large"));
+      events.Add(new Event("COMP10020", "Examples Class", 1, true, new List<string>(new string[] { groups[3], groups[5] }), "Large"));
+      events.Add(new Event("Tutorial", "Tutorial", 1, true, new List<string>(new string[] { groups[3] }), "Large"));
+
+      /* ------------------------ Group A events --------------------------- */
+      events.Add(new Event("Tutorial", "Tutorial", 1, true, new List<string>(new string[] { groups[5] }), "Large"));
+      
+
+      /* ---------------------- Lunch Events ---------------------------- */
+      lunchEvents = new List<Event>();
+      lunchEvents.Add(new Event("Lunch", "Lunch", 1, true, new List<string>(new string[] { groups[0] }), "Large"));
+      lunchEvents.Add(new Event("Lunch", "Lunch", 1, true, new List<string>(new string[] { groups[1] }), "Large"));
+      lunchEvents.Add(new Event("Lunch", "Lunch", 1, true, new List<string>(new string[] { groups[2] }), "Large"));
+      lunchEvents.Add(new Event("Lunch", "Lunch", 1, true, new List<string>(new string[] { groups[3] }), "Large"));
+      lunchEvents.Add(new Event("Lunch", "Lunch", 1, true, new List<string>(new string[] { groups[4] }), "Large"));
+      lunchEvents.Add(new Event("Lunch", "Lunch", 1, true, new List<string>(new string[] { groups[5] }), "Large"));
+
+
+      /* -------------------------- Fixed events -----------------------*/
+      List<Slot> allSlotsForEvent = new List<Slot>();
+      fixedEvents = new List<Gene>();
+
+      allSlotsForEvent = Program.slots.FindAll(delegate(Slot s) { return s.getDay() == 1 && s.getTime() == 1200; });
+      foreach (Slot s in allSlotsForEvent)
+      {
+        fixedEvents.Add(new Gene(s,
+                                 new Event("MATH10232", "Lecture", 1, true, new List<string>(new string[] { groups[4] }), "Large"), 
+                                 new Room("SCH RUTH", "Lecture", "Large"), 
+                                 true));
+      }
+
+      allSlotsForEvent = Program.slots.FindAll(delegate(Slot s) { return s.getDay() == 1 && s.getTime() == 1600; });
+      foreach (Slot s in allSlotsForEvent)
+      {
+        fixedEvents.Add(new Gene(s,
+                                 new Event("MATH10212", "Lecture", 1, true, new List<string>(new string[] { groups[4] }), "Large"),
+                                 new Room("CHEM G.51", "Lecture", "Large"),
+                                 true));
+      }
+
+      allSlotsForEvent = Program.slots.FindAll(delegate(Slot s) { return s.getDay() == 2 && s.getTime() == 900; });
+      foreach (Slot s in allSlotsForEvent)
+      {
+        fixedEvents.Add(new Gene(s,
+                                 new Event("MATH10232", "Lecture", 1, true, new List<string>(new string[] { groups[4] }), "Large"),
+                                 new Room("SCH RUTH", "Lecture", "Large"),
+                                 true));
+      }
+
+      allSlotsForEvent = Program.slots.FindAll(delegate(Slot s) { return s.getDay() == 3 && s.getTime() == 1200; });
+      foreach (Slot s in allSlotsForEvent)
+      {
+        fixedEvents.Add(new Gene(s,
+                                 new Event("MATH10212", "Lecture", 1, true, new List<string>(new string[] { groups[4] }), "Large"),
+                                 new Room("SCH RUTH", "Lecture", "Large"),
+                                 true));
+      }
+
+      allSlotsForEvent = Program.slots.FindAll(delegate(Slot s) { return s.getDay() == 5 && s.getTime() == 900; });
+      foreach (Slot s in allSlotsForEvent)
+      {
+        fixedEvents.Add(new Gene(s,
+                                 new Event("MATH10212", "Lecture", 1, true, new List<string>(new string[] { groups[4] }), "Large"),
+                                 new Room("ALEX TH", "Lecture", "Large"),
+                                 true));
+      }
+
+      allSlotsForEvent = Program.slots.FindAll(delegate(Slot s) { return s.getDay() == 5 && s.getTime() == 1300; });
+      foreach (Slot s in allSlotsForEvent)
+      {
+        fixedEvents.Add(new Gene(s,
+                                 new Event("MATH10232", "Lecture", 1, true, new List<string>(new string[] { groups[4] }), "Large"),
+                                 new Room("SCH RUTH", "Lecture", "Large"),
+                                 true));
+      }
+
+      allSlotsForEvent = Program.slots.FindAll(delegate(Slot s){ return s.getDay() == 2 && s.getTime() == 1000; });
+      foreach (Slot s in allSlotsForEvent)
+      {
+        fixedEvents.Add(new Gene(s,
+                                 new Event("BMAN10252", "Lecture", 1, true, new List<string>(new string[] {groups[5]}), "Large"),
+                                 new Room("Ell Wilk A3.7", "Lecture", "Large"),
+                                 true));
+      }
+
+      allSlotsForEvent = Program.slots.FindAll(delegate(Slot s){ return s.getDay() == 2 && s.getTime() == 1200; });
+      foreach (Slot s in allSlotsForEvent)
+      {
+        fixedEvents.Add(new Gene(s,
+                                 new Event("BMAN10552", "Lecture", 1, true, new List<string>(new string[] {groups[5]}), "Large"),
+                                 new Room("CHAP", "Lecture", "Large"),
+                                 true));
+      }
+
+      allSlotsForEvent = Program.slots.FindAll(delegate(Slot s) { return s.getDay() == 4 && s.getTime() == 1000; });
+      foreach (Slot s in allSlotsForEvent)
+      {
+        fixedEvents.Add(new Gene(s,
+                                 new Event("BMAN10252", "Lecture", 1, true, new List<string>(new string[] { groups[5] }), "Large"),
+                                 new Room("MBS EAST F20", "Lecture", "Large"),
+                                 true));
+      }
+
+      allSlotsForEvent = Program.slots.FindAll(delegate(Slot s) { return s.getDay() == 4 && s.getTime() == 1200; });
+      foreach (Slot s in allSlotsForEvent)
+      {
+        fixedEvents.Add(new Gene(s,
+                                 new Event("BMAN10552", "Workshop", 1, true, new List<string>(new string[] { groups[5] }), "Large"),
+                                 new Room("1.5", "Workshop", "Large"),
+                                 true));
+      }
+
+      allSlotsForEvent = Program.slots.FindAll(delegate(Slot s) { return s.getDay() == 4 && s.getTime() == 1400; });
+      foreach (Slot s in allSlotsForEvent)
+      {
+        fixedEvents.Add(new Gene(s,
+                                 new Event("BMAN10652", "Lecture", 1, true, new List<string>(new string[] { groups[5] }), "Large"),
+                                 new Room("1.1", "Lecture", "Large"),
+                                 true));
+      }
+
+      allSlotsForEvent = Program.slots.FindAll(delegate(Slot s) { return s.getDay() == 4 && s.getTime() == 1500; });
+      foreach (Slot s in allSlotsForEvent)
+      {
+        fixedEvents.Add(new Gene(s,
+                                 new Event("BMAN10252", "Lecture", 1, true, new List<string>(new string[] { groups[5] }), "Large"),
+                                 new Room("MBS EAST F20", "Lecture", "Large"),
+                                 true));
+      }
+
+      allSlotsForEvent = Program.slots.FindAll(delegate(Slot s) { return s.getDay() == 4 && s.getTime() == 1600; });
+      foreach (Slot s in allSlotsForEvent)
+      {
+        fixedEvents.Add(new Gene(s,
+                                 new Event("BMAN10552", "Lecture", 1, true, new List<string>(new string[] { groups[5] }), "Large"),
+                                 new Room("CHAP", "Lecture", "Large"),
+                                 true));
+      }
+
+      allSlotsForEvent = Program.slots.FindAll(delegate(Slot s) { return s.getDay() == 5 && s.getTime() == 1100; });
+      foreach (Slot s in allSlotsForEvent)
+      {
+        fixedEvents.Add(new Gene(s,
+                                 new Event("BMAN10612", "Lecture", 1, true, new List<string>(new string[] { groups[5] }), "Large"),
+                                 new Room("CRAW TH.2", "Lecture", "Large"),
+                                 true));
+      }
+
+      allSlotsForEvent = Program.slots.FindAll(delegate(Slot s) { return s.getDay() == 5 && s.getTime() == 1200; });
+      foreach (Slot s in allSlotsForEvent)
+      {
+        fixedEvents.Add(new Gene(s,
+                                 new Event("BMAN10612", "Lecture", 1, true, new List<string>(new string[] { groups[5] }), "Large"),
+                                 new Room("CRAW TH.2", "Lecture", "Large"),
+                                 true));
+      }
+
+      for (int repeating = 0; repeating < 5; repeating++)
+      {
+        // create initial population
+        Population population = new Population();
+        population.createInitialPopulation();
+        //Console.WriteLine(population);
+
+        //population.selection();
+        population.crossover();
+      }
+      //population.createXML();
+
+      Console.ReadLine();
+    } // main
+  } // class
+} // namespace
